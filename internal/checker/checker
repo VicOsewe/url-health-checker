@@ -1,0 +1,3 @@
+// Package checker handles HTTP health check logic.
+// This package knows nothing about the CLI layer.
+package checker

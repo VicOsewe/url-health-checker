@@ -42,5 +42,5 @@ jobs:
         with:
           push: true
           tags: |
-            YOUR_DOCKERHUB_USERNAME/url-health-checker:latest
-            YOUR_DOCKERHUB_USERNAME/url-health-checker:${{ github.ref_name }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/url-health-checker:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/url-health-checker:${{ github.ref_name }}

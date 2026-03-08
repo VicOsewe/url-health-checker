@@ -1,21 +1,22 @@
-// Package flag implements the CLI interface using Go's standard flag library.
 package flag
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
+	"time"
+
+	"github.com/VicOsewe/url-health-checker/internal/checker"
+	"github.com/VicOsewe/url-health-checker/internal/exporter"
 )
 
-// FlagCLI is the flag-based implementation of the CLI interface.
 type FlagCLI struct{}
 
-// New returns a new FlagCLI instance.
 func New() *FlagCLI {
 	return &FlagCLI{}
 }
 
-// Run parses arguments and routes to the correct command.
 func (f *FlagCLI) Run(args []string) error {
 	if len(args) < 1 {
 		printUsage()
@@ -78,9 +79,31 @@ Examples:
 		os.Exit(1)
 	}
 
+	ctx := context.Background()
+
 	fmt.Printf("Checking %d URL(s) [timeout: %ds, format: %s]\n", len(urls), *timeout, *format)
+
+	resultCh := make(chan checker.Result, len(urls))
+
 	for _, url := range urls {
-		fmt.Printf("  → %s\n", url)
+		go func(u string) {
+			resultCh <- checker.Check(ctx, u, time.Duration(*timeout)*time.Second)
+		}(url)
+	}
+
+	var results []checker.Result
+	for range urls {
+		results = append(results, <-resultCh)
+	}
+
+	base := exporter.New(*format, os.Stdout)
+	exp := &exporter.LoggingExporter{
+		Writer:   os.Stderr,
+		Exporter: base,
+	}
+
+	if err := exp.Export(results); err != nil {
+		return err
 	}
 
 	return nil

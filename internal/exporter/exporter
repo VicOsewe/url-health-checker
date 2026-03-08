@@ -1,3 +1,0 @@
-// Package exporter handles formatting and exporting results (text, JSON, CSV).
-// This package knows nothing about the CLI layer.
-package exporter

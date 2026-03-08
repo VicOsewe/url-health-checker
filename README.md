@@ -1,3 +1,4 @@
+package obmondoapigo
 # URL Health Checker
 
 A fast, lightweight CLI tool for checking website health, measuring response times, and exporting results in multiple formats.
@@ -11,7 +12,7 @@ A fast, lightweight CLI tool for checking website health, measuring response tim
 ## Installation
 
 ```bash
-git clone https://github.com/user/url-health-checker.git
+git clone https://github.com/ViceOsewe/url-health-checker.git
 cd url-health-checker
 go build -o url-health-checker .
 ```
@@ -46,10 +47,8 @@ url-health-checker/
 ├── main.go                        # Entry point - wires CLI to business logic
 ├── cli/
 │   ├── cli.go                     # CLI interface definition
-│   ├── flag/
-│   │   └── flag.go                # flag implementation (active)
-│   └── cobra/
-│       └── cobra.go               # cobra implementation (future swap)
+│   └── flag/
+│       └── flag.go               # flag implementation 
 ├── internal/
 │   ├── checker/
 │   │   └── checker.go             # HTTP health check logic

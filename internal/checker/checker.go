@@ -2,6 +2,7 @@ package checker
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -29,7 +30,12 @@ func Check(ctx context.Context, url string, timeout time.Duration) Result {
 	if err != nil {
 		return Result{URL: url, Error: err, Duration: time.Since(start)}
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			fmt.Printf("warning: failed to close response body: %v\n", err)
+		}
+	}()
 
 	return Result{
 		URL:        url,

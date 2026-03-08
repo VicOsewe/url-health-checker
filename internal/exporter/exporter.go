@@ -22,9 +22,13 @@ type TextExporter struct {
 func (t *TextExporter) Export(results []checker.Result) error {
 	for _, r := range results {
 		if r.Error != nil {
-			fmt.Fprintf(t.Writer, "❌ %s — ERROR: %v\n", r.URL, r.Error)
+			if _, err := fmt.Fprintf(t.Writer, "❌ %s — ERROR: %v\n", r.URL, r.Error); err != nil {
+				return err
+			}
 		} else {
-			fmt.Fprintf(t.Writer, "✅ %s — %d (%s)\n", r.URL, r.StatusCode, r.Duration)
+			if _, err := fmt.Fprintf(t.Writer, "✅ %s — %d (%s)\n", r.URL, r.StatusCode, r.Duration); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -69,18 +73,22 @@ type CSVExporter struct {
 }
 
 func (c *CSVExporter) Export(results []checker.Result) error {
-	fmt.Fprintln(c.Writer, "url,status_code,duration_ms,error")
+	if _, err := fmt.Fprintln(c.Writer, "url,status_code,duration_ms,error"); err != nil {
+		return err
+	}
 	for _, r := range results {
 		errStr := ""
 		if r.Error != nil {
 			errStr = r.Error.Error()
 		}
-		fmt.Fprintf(c.Writer, "%s,%d,%d,%s\n",
+		if _, err := fmt.Fprintf(c.Writer, "%s,%d,%d,%s\n",
 			r.URL,
 			r.StatusCode,
 			r.Duration/time.Millisecond,
 			errStr,
-		)
+		); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -93,16 +101,22 @@ type LoggingExporter struct {
 }
 
 func (l *LoggingExporter) Export(results []checker.Result) error {
-	fmt.Fprintf(l.Writer, "→ exporting %d results...\n", len(results))
+	if _, err := fmt.Fprintf(l.Writer, "→ exporting %d results...\n", len(results)); err != nil {
+		return err
+	}
 
 	start := time.Now()
 	err := l.Exporter.Export(results)
 	elapsed := time.Since(start)
 
 	if err != nil {
-		fmt.Fprintf(l.Writer, "→ export failed after %s: %v\n", elapsed, err)
+		if _, werr := fmt.Fprintf(l.Writer, "→ export failed after %s: %v\n", elapsed, err); werr != nil {
+			return werr
+		}
 	} else {
-		fmt.Fprintf(l.Writer, "→ export completed in %s\n", elapsed)
+		if _, werr := fmt.Fprintf(l.Writer, "→ export completed in %s\n", elapsed); werr != nil {
+			return werr
+		}
 	}
 
 	return err

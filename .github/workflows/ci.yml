@@ -8,25 +8,40 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.23', '1.24']
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
-          go-version: '1.24'
+          go-version: ${{ matrix.go-version }}
+          cache: true
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9 # v6.5.2
         with:
           version: latest
 
+      - name: Vulnerability scan
+        # checks your Go dependencies against the Go vulnerability database
+        # only flags CVEs your code actually calls — no noise from unused code paths
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
       - name: Test
-        run: go test ./... -v -race -cover
+        run: go test ./... -v -race -cover -timeout 30s
 
       - name: Build
         run: go build ./...
@@ -37,18 +52,45 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5730b3490ce8b62aae63cc5f9e16f7e5d2b2a8a # v3.10.0
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v4
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+      - name: Build image for scanning
+        # build first without pushing — scan before releasing anything
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          push: false
+          load: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/url-health-checker:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Docker image for vulnerabilities
+        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # v0.30.0
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/url-health-checker:${{ github.sha }}
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          ignore-unfixed: true
+
+      - name: Push Docker image
+        # only reaches here if scan found no CRITICAL or HIGH vulnerabilities
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/url-health-checker:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/url-health-checker:${{ github.ref_name }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/url-health-checker:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

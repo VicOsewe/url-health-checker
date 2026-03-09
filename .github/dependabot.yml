@@ -1,0 +1,11 @@
+version: 2
+updates:
+  # Automatically opens PRs to update pinned action SHAs when new versions release
+  # This is how you stay secure without manually tracking every action update
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly  # checks every Monday
+    labels:
+      - "ci"
+      - "dependencies"

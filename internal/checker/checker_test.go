@@ -20,7 +20,7 @@ func TestCheck(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 	hangHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		select {} // hang forever — for timeout test
+		<-r.Context().Done() // unblocks when client disconnects or times out
 	})
 
 	tests := []struct {

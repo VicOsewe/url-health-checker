@@ -1,9 +1,0 @@
-
-# .govulncheck.yaml
-# Temporarily ignoring stdlib vulnerabilities fixed in Go 1.25
-# TODO: remove once we upgrade to Go 1.25
-exceptions:
-  - id: GO-2026-4602
-    reason: "Fixed in Go 1.25, upgrade planned"
-  - id: GO-2026-4601
-    reason: "Fixed in Go 1.25, upgrade planned"

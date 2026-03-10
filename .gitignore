@@ -7,7 +7,6 @@ url-health-checker.exe
 
 # Go
 /vendor/
-go.sum
 
 # IDE
 .vscode/

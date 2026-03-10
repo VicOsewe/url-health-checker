@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25.8-alpine AS builder
 
 WORKDIR /app
 
@@ -18,10 +18,14 @@ FROM alpine:3.19
 
 WORKDIR /app
 
-# Add CA certificates so HTTPS requests work
 RUN apk --no-cache add ca-certificates
 
-# Copy only the binary from builder
+# create a non-root user
+RUN adduser -D -g '' appuser
+
 COPY --from=builder /app/url-health-checker .
+
+# switch to non-root before running
+USER appuser
 
 ENTRYPOINT ["./url-health-checker"]

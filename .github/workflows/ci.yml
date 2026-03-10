@@ -65,7 +65,7 @@ jobs:
 
       - name: Build image for scanning
         # build first without pushing — scan before releasing anything
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
         with:
           push: false
           load: true
@@ -84,7 +84,7 @@ jobs:
 
       - name: Push Docker image
         # only reaches here if scan found no CRITICAL or HIGH vulnerabilities
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
         with:
           push: true
           platforms: linux/amd64,linux/arm64
